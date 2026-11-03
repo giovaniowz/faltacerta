@@ -46,3 +46,26 @@ export function resumoDaDisciplina(
     status,
   };
 }
+
+// Prévia mostrada no cadastro: limite de faltas e quantas noites ele representa.
+export function previaDoLimite(
+  cargaHoraria: number,
+  aulasPorNoite: number
+): { limite: number; noites: number } {
+  const limite = limiteDeFaltas(cargaHoraria);
+  return { limite, noites: Math.floor(limite / aulasPorNoite) };
+}
+
+// Faltas de uma disciplina, da mais recente para a mais antiga.
+// Na mesma data, a registrada por último aparece primeiro.
+export function faltasDaDisciplina(faltas: Falta[], disciplinaId: string): Falta[] {
+  return faltas
+    .map((f, indice) => ({ f, indice }))
+    .filter(({ f }) => f.disciplinaId === disciplinaId)
+    .sort((a, b) => {
+      if (a.f.data < b.f.data) return 1;
+      if (a.f.data > b.f.data) return -1;
+      return b.indice - a.indice;
+    })
+    .map(({ f }) => f);
+}

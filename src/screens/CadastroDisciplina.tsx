@@ -1,27 +1,44 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../App';
 import { previaDoLimite } from '../domain/calculo';
 import { gerarId } from '../domain/ids';
 import { plural } from '../domain/textos';
-import { ErrosDisciplina, MAX_AULAS_POR_NOITE, lerInteiro, validarDisciplina } from '../domain/validacao';
 import { AULAS_POR_NOITE_PADRAO } from '../domain/tipos';
+import { ErrosDisciplina, MAX_AULAS_POR_NOITE, lerInteiro, validarDisciplina } from '../domain/validacao';
+import type { PilhaProps } from '../navegacao/tipos';
 import { useDados } from '../state/DadosContext';
 import { cores } from '../theme/cores';
+import { raio } from '../theme/tema';
 import Botao from '../components/Botao';
+import Campo, { estiloInput } from '../components/Campo';
+import { confirmarExclusao } from '../components/confirmar';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'CadastroDisciplina'>;
+// US01 e US08: cadastrar ou editar uma disciplina, mostrando o limite de faltas calculado.
+export default function CadastroDisciplina({ navigation, route }: PilhaProps<'CadastroDisciplina'>) {
+  const idEdicao = route.params?.disciplinaId;
+  const { disciplinas, adicionarDisciplina, atualizarDisciplina, removerDisciplina } = useDados();
+  const existente = idEdicao ? disciplinas.find((d) => d.id === idEdicao) : undefined;
 
-// US01: cadastrar disciplina e já mostrar o limite de faltas calculado.
-export default function CadastroDisciplina({ navigation }: Props) {
-  const { adicionarDisciplina } = useDados();
-  const [nome, setNome] = useState('');
-  const [professor, setProfessor] = useState('');
-  const [cargaHoraria, setCargaHoraria] = useState('');
-  const [aulasPorNoite, setAulasPorNoite] = useState(String(AULAS_POR_NOITE_PADRAO));
+  const [nome, setNome] = useState(existente?.nome ?? '');
+  const [professor, setProfessor] = useState(existente?.professor ?? '');
+  const [cargaHoraria, setCargaHoraria] = useState(existente ? String(existente.cargaHoraria) : '');
+  const [aulasPorNoite, setAulasPorNoite] = useState(
+    existente ? String(existente.aulasPorNoite) : String(AULAS_POR_NOITE_PADRAO)
+  );
   const [erros, setErros] = useState<ErrosDisciplina>({});
   const [salvando, setSalvando] = useState(false);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: existente ? 'Editar disciplina' : 'Nova disciplina' });
+  }, [navigation, existente]);
+
+  if (idEdicao && !existente) {
+    return (
+      <View style={estilos.tela}>
+        <Text style={estilos.aviso}>Disciplina não encontrada.</Text>
+      </View>
+    );
+  }
 
   // Prévia do limite enquanto a pessoa digita (só quando os números são válidos).
   const carga = lerInteiro(cargaHoraria);
@@ -40,11 +57,11 @@ export default function CadastroDisciplina({ navigation }: Props) {
     setErros({});
     setSalvando(true);
     try {
-      await adicionarDisciplina({
-        id: gerarId(),
-        ...resultado.valores,
-        criadaEm: new Date().toISOString(),
-      });
+      if (existente) {
+        await atualizarDisciplina({ ...existente, ...resultado.valores });
+      } else {
+        await adicionarDisciplina({ id: gerarId(), ...resultado.valores, criadaEm: new Date().toISOString() });
+      }
       navigation.goBack();
     } catch {
       Alert.alert('Não foi possível salvar', 'Tente novamente.');
@@ -52,11 +69,27 @@ export default function CadastroDisciplina({ navigation }: Props) {
     }
   }
 
+  function excluir() {
+    if (!existente) return;
+    confirmarExclusao(
+      'Excluir disciplina?',
+      `"${existente.nome}" será apagada junto com todas as faltas e os prazos dela. Isso não pode ser desfeito.`,
+      async () => {
+        try {
+          await removerDisciplina(existente.id);
+          navigation.popToTop();
+        } catch {
+          Alert.alert('Não foi possível excluir', 'Tente novamente.');
+        }
+      }
+    );
+  }
+
   return (
     <ScrollView style={estilos.tela} contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
       <Campo rotulo="Nome da disciplina" erro={erros.nome}>
         <TextInput
-          style={estilos.input}
+          style={estiloInput}
           value={nome}
           onChangeText={setNome}
           placeholder="Ex.: Auditoria de Sistemas"
@@ -67,7 +100,7 @@ export default function CadastroDisciplina({ navigation }: Props) {
 
       <Campo rotulo="Professor (opcional)">
         <TextInput
-          style={estilos.input}
+          style={estiloInput}
           value={professor}
           onChangeText={setProfessor}
           accessibilityLabel="Professor, opcional"
@@ -77,7 +110,7 @@ export default function CadastroDisciplina({ navigation }: Props) {
 
       <Campo rotulo="Carga horária (em horas)" erro={erros.cargaHoraria}>
         <TextInput
-          style={estilos.input}
+          style={estiloInput}
           value={cargaHoraria}
           onChangeText={setCargaHoraria}
           keyboardType="number-pad"
@@ -89,7 +122,7 @@ export default function CadastroDisciplina({ navigation }: Props) {
 
       <Campo rotulo={`Aulas por noite (1 a ${MAX_AULAS_POR_NOITE})`} erro={erros.aulasPorNoite}>
         <TextInput
-          style={estilos.input}
+          style={estiloInput}
           value={aulasPorNoite}
           onChangeText={setAulasPorNoite}
           keyboardType="number-pad"
@@ -106,37 +139,21 @@ export default function CadastroDisciplina({ navigation }: Props) {
         </View>
       ) : null}
 
-      <Botao titulo={salvando ? 'Salvando...' : 'Salvar disciplina'} onPress={salvar} desabilitado={salvando} />
-    </ScrollView>
-  );
-}
+      <Botao
+        titulo={salvando ? 'Salvando...' : existente ? 'Salvar alterações' : 'Salvar disciplina'}
+        onPress={salvar}
+        desabilitado={salvando}
+      />
 
-function Campo({ rotulo, erro, children }: { rotulo: string; erro?: string; children: React.ReactNode }) {
-  return (
-    <View style={estilos.campo}>
-      <Text style={estilos.rotulo}>{rotulo}</Text>
-      {children}
-      {erro ? <Text style={estilos.erro}>{erro}</Text> : null}
-    </View>
+      {existente ? <Botao titulo="Excluir disciplina" variante="perigo" icone="trash-outline" onPress={excluir} /> : null}
+    </ScrollView>
   );
 }
 
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: cores.fundo },
   conteudo: { padding: 16, gap: 16 },
-  campo: { gap: 6 },
-  rotulo: { fontSize: 16, fontWeight: '600', color: cores.texto },
-  input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: cores.borda,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    color: cores.texto,
-    backgroundColor: cores.cartao,
-  },
-  erro: { fontSize: 16, color: cores.status.excedido.texto },
-  previa: { backgroundColor: cores.status.ok.fundo, borderRadius: 10, padding: 14 },
+  previa: { backgroundColor: cores.status.ok.fundo, borderRadius: raio.md, padding: 14 },
   textoPrevia: { fontSize: 16, fontWeight: '600', color: cores.status.ok.texto },
+  aviso: { fontSize: 16, color: cores.textoSuave, textAlign: 'center', marginTop: 16 },
 });

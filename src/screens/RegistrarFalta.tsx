@@ -1,46 +1,41 @@
-import React, { useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../App';
-import { ehFutura, formatarDataBR, hojeISO, paraDataISO } from '../domain/datas';
+import React, { useLayoutEffect, useState } from 'react';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { ehFutura, isoParaData, paraDataISO } from '../domain/datas';
 import { gerarId } from '../domain/ids';
 import { plural } from '../domain/textos';
 import { limitarQuantidade } from '../domain/validacao';
+import type { PilhaProps } from '../navegacao/tipos';
 import { useDados } from '../state/DadosContext';
 import { cores } from '../theme/cores';
 import Botao from '../components/Botao';
+import CampoData from '../components/CampoData';
+import { confirmarExclusao } from '../components/confirmar';
+import Contador from '../components/Contador';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'RegistrarFalta'>;
-
-// US02: registrar as faltas de uma noite (padrão: todas as aulas da noite).
-export default function RegistrarFalta({ navigation, route }: Props) {
-  const { disciplinas, adicionarFalta } = useDados();
+// US02 e US08: registrar (ou editar) as faltas de uma noite.
+export default function RegistrarFalta({ navigation, route }: PilhaProps<'RegistrarFalta'>) {
+  const { disciplinas, faltas, adicionarFalta, atualizarFalta, removerFalta } = useDados();
   const disciplina = disciplinas.find((d) => d.id === route.params.disciplinaId);
+  const faltaId = route.params.faltaId;
+  const existente = faltaId ? faltas.find((f) => f.id === faltaId) : undefined;
 
-  const [data, setData] = useState(() => new Date());
-  const [quantidade, setQuantidade] = useState(disciplina?.aulasPorNoite ?? 3);
+  const [data, setData] = useState(() => (existente ? isoParaData(existente.data) : new Date()));
+  const [quantidade, setQuantidade] = useState(existente?.quantidade ?? disciplina?.aulasPorNoite ?? 3);
   const [salvando, setSalvando] = useState(false);
 
-  if (!disciplina) {
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: existente ? 'Editar falta' : 'Registrar falta' });
+  }, [navigation, existente]);
+
+  if (!disciplina || (faltaId && !existente)) {
     return (
       <View style={estilos.tela}>
-        <Text style={estilos.aviso}>Disciplina não encontrada.</Text>
+        <Text style={estilos.aviso}>{disciplina ? 'Falta não encontrada.' : 'Disciplina não encontrada.'}</Text>
       </View>
     );
   }
 
   const dataISO = paraDataISO(data);
-  const ehHoje = dataISO === hojeISO();
-
-  function abrirSeletorAndroid() {
-    DateTimePickerAndroid.open({
-      value: data,
-      mode: 'date',
-      maximumDate: new Date(),
-      onValueChange: (_evento, selecionada) => setData(selecionada),
-    });
-  }
 
   async function confirmar() {
     if (!disciplina) return;
@@ -48,14 +43,14 @@ export default function RegistrarFalta({ navigation, route }: Props) {
       Alert.alert('Data inválida', 'A data da falta não pode ser futura.');
       return;
     }
+    const qtd = limitarQuantidade(quantidade, disciplina.aulasPorNoite);
     setSalvando(true);
     try {
-      await adicionarFalta({
-        id: gerarId(),
-        disciplinaId: disciplina.id,
-        data: dataISO,
-        quantidade: limitarQuantidade(quantidade, disciplina.aulasPorNoite),
-      });
+      if (existente) {
+        await atualizarFalta({ ...existente, data: dataISO, quantidade: qtd });
+      } else {
+        await adicionarFalta({ id: gerarId(), disciplinaId: disciplina.id, data: dataISO, quantidade: qtd });
+      }
       navigation.goBack();
     } catch {
       Alert.alert('Não foi possível salvar', 'Tente novamente.');
@@ -63,64 +58,47 @@ export default function RegistrarFalta({ navigation, route }: Props) {
     }
   }
 
+  function excluir() {
+    if (!existente) return;
+    confirmarExclusao('Excluir falta?', 'O registro desta falta será apagado e o contador será atualizado.', async () => {
+      try {
+        await removerFalta(existente.id);
+        navigation.goBack();
+      } catch {
+        Alert.alert('Não foi possível excluir', 'Tente novamente.');
+      }
+    });
+  }
+
   return (
     <View style={estilos.tela}>
       <Text style={estilos.nome}>{disciplina.nome}</Text>
 
-      <View style={estilos.bloco}>
-        <Text style={estilos.rotulo}>Data da falta</Text>
-        {Platform.OS === 'android' ? (
-          <Pressable
-            onPress={abrirSeletorAndroid}
-            accessibilityRole="button"
-            accessibilityLabel={`Data da falta: ${formatarDataBR(dataISO)}. Toque para alterar`}
-            style={estilos.campoData}
-          >
-            <Text style={estilos.textoData}>
-              {formatarDataBR(dataISO)}
-              {ehHoje ? ' (hoje)' : ''}
-            </Text>
-          </Pressable>
-        ) : (
-          <DateTimePicker
-            value={data}
-            mode="date"
-            display="compact"
-            maximumDate={new Date()}
-            onValueChange={(_evento, selecionada) => setData(selecionada)}
-          />
-        )}
-      </View>
+      <CampoData rotulo="Data da falta" valor={data} onChange={setData} maximo={new Date()} />
 
       <View style={estilos.bloco}>
         <Text style={estilos.rotulo}>Aulas perdidas</Text>
-        <View style={estilos.contador}>
-          <Pressable
-            onPress={() => setQuantidade((q) => limitarQuantidade(q - 1, disciplina.aulasPorNoite))}
-            accessibilityRole="button"
-            accessibilityLabel="Diminuir aulas perdidas"
-            style={estilos.botaoContador}
-          >
-            <Text style={estilos.simbolo}>−</Text>
-          </Pressable>
-          <Text style={estilos.valor} accessibilityLiveRegion="polite">
-            {plural(quantidade, 'aula', 'aulas')}
-          </Text>
-          <Pressable
-            onPress={() => setQuantidade((q) => limitarQuantidade(q + 1, disciplina.aulasPorNoite))}
-            accessibilityRole="button"
-            accessibilityLabel="Aumentar aulas perdidas"
-            style={estilos.botaoContador}
-          >
-            <Text style={estilos.simbolo}>+</Text>
-          </Pressable>
-        </View>
+        <Contador
+          valor={quantidade}
+          min={1}
+          max={disciplina.aulasPorNoite}
+          onChange={setQuantidade}
+          formatar={(n) => plural(n, 'aula', 'aulas')}
+          rotuloMenos="Diminuir aulas perdidas"
+          rotuloMais="Aumentar aulas perdidas"
+        />
         <Text style={estilos.dica}>
           Cada aula perdida vale 1 falta. Uma noite completa tem {disciplina.aulasPorNoite} aulas.
         </Text>
       </View>
 
-      <Botao titulo={salvando ? 'Salvando...' : 'Confirmar'} onPress={confirmar} desabilitado={salvando} />
+      <Botao
+        titulo={salvando ? 'Salvando...' : existente ? 'Salvar alterações' : 'Confirmar'}
+        onPress={confirmar}
+        desabilitado={salvando}
+      />
+
+      {existente ? <Botao titulo="Excluir falta" variante="perigo" icone="trash-outline" onPress={excluir} /> : null}
     </View>
   );
 }
@@ -130,29 +108,6 @@ const estilos = StyleSheet.create({
   nome: { fontSize: 20, fontWeight: '700', color: cores.texto },
   bloco: { gap: 8 },
   rotulo: { fontSize: 16, fontWeight: '600', color: cores.texto },
-  campoData: {
-    minHeight: 48,
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: cores.borda,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    backgroundColor: cores.cartao,
-  },
-  textoData: { fontSize: 16, color: cores.texto },
-  contador: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  botaoContador: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: cores.primaria,
-    backgroundColor: cores.cartao,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  simbolo: { fontSize: 24, color: cores.primaria, fontWeight: '700' },
-  valor: { fontSize: 18, fontWeight: '600', color: cores.texto, minWidth: 90, textAlign: 'center' },
   dica: { fontSize: 16, color: cores.textoSuave },
   aviso: { fontSize: 16, color: cores.textoSuave, textAlign: 'center', marginTop: 16 },
 });

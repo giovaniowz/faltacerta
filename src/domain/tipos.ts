@@ -14,6 +14,18 @@ export type Falta = {
   quantidade: number; // aulas perdidas, 1 até aulasPorNoite
 };
 
+export type TipoCompromisso = 'prova' | 'trabalho';
+
+export type Compromisso = {
+  id: string;
+  disciplinaId: string;
+  tipo: TipoCompromisso;
+  descricao: string;
+  prazo: string; // AAAA-MM-DD
+  concluido: boolean;
+  criadoEm: string; // ISO
+};
+
 export type Config = { nivelAlerta: number };
 
 export type Status = 'ok' | 'alerta' | 'limite' | 'excedido';
@@ -28,6 +40,8 @@ export type Resumo = {
 };
 
 export const NIVEL_ALERTA_PADRAO = 3;
+export const NIVEL_ALERTA_MIN = 1;
+export const NIVEL_ALERTA_MAX = 30;
 export const AULAS_POR_NOITE_PADRAO = 3;
 export const PERCENTUAL_MAXIMO_FALTAS = 0.25;
 export const CONFIG_PADRAO: Config = { nivelAlerta: NIVEL_ALERTA_PADRAO };

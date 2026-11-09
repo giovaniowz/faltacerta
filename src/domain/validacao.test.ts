@@ -1,4 +1,4 @@
-import { lerInteiro, limitarQuantidade, validarDisciplina } from './validacao';
+import { lerInteiro, limitarNivelAlerta, limitarQuantidade, validarDisciplina } from './validacao';
 
 const entrada = (parcial = {}) => ({
   nome: 'Auditoria de Sistemas',
@@ -72,5 +72,14 @@ describe('limitarQuantidade', () => {
     expect(limitarQuantidade(0, 3)).toBe(1);
     expect(limitarQuantidade(2, 3)).toBe(2);
     expect(limitarQuantidade(4, 3)).toBe(3);
+  });
+});
+
+describe('limitarNivelAlerta', () => {
+  it('mantém o nível entre 1 e 30', () => {
+    expect(limitarNivelAlerta(0)).toBe(1);
+    expect(limitarNivelAlerta(3)).toBe(3);
+    expect(limitarNivelAlerta(99)).toBe(30);
+    expect(limitarNivelAlerta(2.6)).toBe(3);
   });
 });

@@ -1,4 +1,4 @@
-import { ehFutura, formatarDataBR, hojeISO, paraDataISO } from './datas';
+import { ehFutura, formatarDataBR, hojeISO, isoParaData, paraDataISO } from './datas';
 
 describe('datas', () => {
   it('usa a data local, mesmo à noite (sem virar o dia por causa do UTC)', () => {
@@ -22,5 +22,13 @@ describe('datas', () => {
     expect(ehFutura('2026-10-27', '2026-10-26')).toBe(true);
     expect(ehFutura('2026-10-26', '2026-10-26')).toBe(false);
     expect(ehFutura('2026-10-25', '2026-10-26')).toBe(false);
+  });
+
+  it('converte AAAA-MM-DD em Date local e volta sem mudar o dia', () => {
+    const data = isoParaData('2026-11-10');
+    expect(data.getFullYear()).toBe(2026);
+    expect(data.getMonth()).toBe(10);
+    expect(data.getDate()).toBe(10);
+    expect(paraDataISO(data)).toBe('2026-11-10');
   });
 });

@@ -1,3 +1,5 @@
+import { NIVEL_ALERTA_MAX, NIVEL_ALERTA_MIN } from './tipos';
+
 export type EntradaDisciplina = {
   nome: string;
   professor: string;
@@ -61,4 +63,9 @@ export function validarDisciplina(e: EntradaDisciplina): ResultadoValidacao {
 // Mantém a quantidade de aulas perdidas entre 1 e o máximo de aulas da noite.
 export function limitarQuantidade(quantidade: number, aulasPorNoite: number): number {
   return Math.min(Math.max(quantidade, 1), aulasPorNoite);
+}
+
+// Mantém o nível de alerta (em faltas restantes) dentro dos limites aceitos.
+export function limitarNivelAlerta(nivel: number): number {
+  return Math.min(Math.max(Math.round(nivel), NIVEL_ALERTA_MIN), NIVEL_ALERTA_MAX);
 }

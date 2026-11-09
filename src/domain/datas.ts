@@ -26,3 +26,9 @@ export function formatarDataBR(iso: string): string {
 export function ehFutura(iso: string, hoje: string = hojeISO()): boolean {
   return iso > hoje;
 }
+
+// '2026-11-10' -> Date à meia-noite do horário local (para o seletor de data).
+export function isoParaData(iso: string): Date {
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  return new Date(ano, mes - 1, dia);
+}

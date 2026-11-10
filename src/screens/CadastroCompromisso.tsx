@@ -1,7 +1,9 @@
 import React, { useLayoutEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { hojeISO, isoParaData, paraDataISO } from '../domain/datas';
 import { gerarId } from '../domain/ids';
+import { estadoDoLembrete, textoEstadoLembrete } from '../domain/lembretes';
 import { ErrosCompromisso, validarCompromisso } from '../domain/prazos';
 import { TipoCompromisso } from '../domain/tipos';
 import type { PilhaProps } from '../navegacao/tipos';
@@ -23,7 +25,7 @@ const TIPOS: { valor: TipoCompromisso; rotulo: string }[] = [
 // US05 e US08: cadastrar ou editar uma prova ou um trabalho com prazo.
 export default function CadastroCompromisso({ navigation, route }: PilhaProps<'CadastroCompromisso'>) {
   const idEdicao = route.params?.compromissoId;
-  const { disciplinas, compromissos, adicionarCompromisso, atualizarCompromisso, removerCompromisso } = useDados();
+  const { disciplinas, compromissos, config, adicionarCompromisso, atualizarCompromisso, removerCompromisso } = useDados();
   const existente = idEdicao ? compromissos.find((c) => c.id === idEdicao) : undefined;
 
   const [tipo, setTipo] = useState<TipoCompromisso>(existente?.tipo ?? 'prova');
@@ -59,6 +61,21 @@ export default function CadastroCompromisso({ navigation, route }: PilhaProps<'C
       </View>
     );
   }
+
+  const prazoISO = paraDataISO(prazo);
+  const estadoLembrete = estadoDoLembrete(
+    {
+      id: '',
+      disciplinaId: disciplinaId ?? '',
+      tipo,
+      descricao,
+      prazo: prazoISO,
+      concluido: existente?.concluido ?? false,
+      criadoEm: '',
+    },
+    config,
+    new Date()
+  );
 
   async function salvar() {
     const resultado = validarCompromisso(
@@ -149,6 +166,11 @@ export default function CadastroCompromisso({ navigation, route }: PilhaProps<'C
         {erros.prazo ? <Text style={estilos.erro}>{erros.prazo}</Text> : null}
       </View>
 
+      <View style={estilos.lembrete} accessibilityLiveRegion="polite">
+        <Ionicons name="notifications-outline" size={22} color={cores.primaria} />
+        <Text style={estilos.textoLembrete}>{textoEstadoLembrete(estadoLembrete, config, prazoISO)}</Text>
+      </View>
+
       <Botao
         titulo={salvando ? 'Salvando...' : existente ? 'Salvar alterações' : 'Salvar prazo'}
         onPress={salvar}
@@ -178,5 +200,7 @@ const estilos = StyleSheet.create({
   textoOpcao: { fontSize: 16, color: cores.texto },
   textoOpcaoAtiva: { color: cores.primaria, fontWeight: '700' },
   erro: { fontSize: 16, color: cores.status.excedido.texto, marginTop: 6 },
+  lembrete: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: cores.primariaSuave, borderRadius: raio.md, padding: 12 },
+  textoLembrete: { flex: 1, fontSize: 16, lineHeight: 22, color: cores.texto },
   aviso: { fontSize: 16, color: cores.textoSuave, textAlign: 'center', marginTop: 16 },
 });

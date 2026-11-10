@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { formatarPercentual, frequenciaDe } from '../domain/frequencia';
 import { Disciplina, Resumo } from '../domain/tipos';
 import { rotuloStatus } from '../domain/textos';
 import { cores } from '../theme/cores';
@@ -42,9 +43,14 @@ export default function CartaoDisciplina({ disciplina, resumo, onAbrir, onRegist
           <Ionicons name="chevron-forward" size={20} color={cores.textoSuave} />
         </View>
 
-        <Text style={estilos.contagem}>
-          {resumo.faltasRegistradas} / {resumo.limite} faltas
-        </Text>
+        <View style={estilos.linhaContagem}>
+          <Text style={estilos.contagem}>
+            {resumo.faltasRegistradas} / {resumo.limite} faltas
+          </Text>
+          <Text style={estilos.frequencia}>
+            Frequência {formatarPercentual(frequenciaDe(disciplina.cargaHoraria, resumo.faltasRegistradas))}
+          </Text>
+        </View>
 
         <View style={estilos.trilho}>
           <View style={[estilos.preenchimento, { width: `${porcentagem}%`, backgroundColor: paleta.forte }]} />
@@ -74,7 +80,9 @@ const estilos = StyleSheet.create({
   titulos: { flex: 1 },
   nome: { fontSize: 18, fontWeight: '700', color: cores.texto },
   professor: { fontSize: 16, color: cores.textoSuave },
+  linhaContagem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   contagem: { fontSize: 16, color: cores.texto },
+  frequencia: { fontSize: 16, color: cores.textoSuave },
   trilho: { height: 10, borderRadius: 5, backgroundColor: cores.borda, overflow: 'hidden' },
   preenchimento: { height: 10, borderRadius: 5 },
   etiqueta: { alignSelf: 'flex-start', borderRadius: raio.pilula, paddingHorizontal: 12, paddingVertical: 4 },

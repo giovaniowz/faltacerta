@@ -15,6 +15,7 @@ export type RootStackParamList = {
   RegistrarFalta: { disciplinaId: string; faltaId?: string };
   CadastroCompromisso: { compromissoId?: string; disciplinaId?: string } | undefined;
   Configuracoes: undefined;
+  ComoCalculamos: undefined;
 };
 
 export type PilhaProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

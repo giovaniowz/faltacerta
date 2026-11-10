@@ -8,6 +8,7 @@ import type { AbasParamList, RootStackParamList } from './src/navegacao/tipos';
 import { DadosProvider, useDados } from './src/state/DadosContext';
 import { cores } from './src/theme/cores';
 import CadastroCompromisso from './src/screens/CadastroCompromisso';
+import ComoCalculamos from './src/screens/ComoCalculamos';
 import CadastroDisciplina from './src/screens/CadastroDisciplina';
 import Configuracoes from './src/screens/Configuracoes';
 import DetalheDisciplina from './src/screens/DetalheDisciplina';
@@ -111,6 +112,7 @@ function Rotas() {
         <Pilha.Screen name="RegistrarFalta" component={RegistrarFalta} options={{ title: 'Registrar falta' }} />
         <Pilha.Screen name="CadastroCompromisso" component={CadastroCompromisso} options={{ title: 'Novo prazo' }} />
         <Pilha.Screen name="Configuracoes" component={Configuracoes} options={{ title: 'Configurações' }} />
+        <Pilha.Screen name="ComoCalculamos" component={ComoCalculamos} options={{ title: 'Como calculamos' }} />
       </Pilha.Navigator>
     </NavigationContainer>
   );

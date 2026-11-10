@@ -3,6 +3,7 @@ import React, { useLayoutEffect } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { faltasDaDisciplina, resumoDaDisciplina } from '../domain/calculo';
 import { formatarDataBR } from '../domain/datas';
+import { FREQUENCIA_MINIMA, formatarPercentual, frequenciaDe } from '../domain/frequencia';
 import { plural } from '../domain/textos';
 import type { PilhaProps } from '../navegacao/tipos';
 import { useDados } from '../state/DadosContext';
@@ -11,6 +12,7 @@ import { raio, sombra } from '../theme/tema';
 import BannerStatus from '../components/BannerStatus';
 import Botao from '../components/Botao';
 import BotaoIcone from '../components/BotaoIcone';
+import PossoFaltar from '../components/PossoFaltar';
 
 // US03, US04 e US08: faltas e noites restantes, alerta e histórico (que pode ser editado).
 export default function DetalheDisciplina({ navigation, route }: PilhaProps<'DetalheDisciplina'>) {
@@ -61,7 +63,14 @@ export default function DetalheDisciplina({ navigation, route }: PilhaProps<'Det
         {resumo.faltasRegistradas}
       </Text>
 
+      <Text style={estilos.dados}>
+        Frequência: {formatarPercentual(frequenciaDe(disciplina.cargaHoraria, resumo.faltasRegistradas))} · mínimo
+        exigido: {FREQUENCIA_MINIMA}%
+      </Text>
+
       <BannerStatus resumo={resumo} />
+
+      <PossoFaltar disciplina={disciplina} faltas={faltas} nivelAlerta={config.nivelAlerta} />
 
       <Botao
         titulo="Registrar falta"

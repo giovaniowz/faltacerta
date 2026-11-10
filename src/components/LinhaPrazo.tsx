@@ -51,8 +51,15 @@ export default function LinhaPrazo({ compromisso: c, nomeDisciplina, hoje, onAbr
         <Text style={estilos.detalhe} numberOfLines={2}>
           {rotuloTipo(c.tipo)} · {nomeDisciplina} · {formatarDataBR(c.prazo)}
         </Text>
-        <View style={[estilos.etiqueta, { backgroundColor: paleta.fundo }]}>
-          <Text style={[estilos.textoEtiqueta, { color: paleta.texto }]}>{rotulo}</Text>
+        <View style={estilos.linhaEtiqueta}>
+          <View style={[estilos.etiqueta, { backgroundColor: paleta.fundo }]}>
+            <Text style={[estilos.textoEtiqueta, { color: paleta.texto }]}>{rotulo}</Text>
+          </View>
+          {c.notificacaoId && !c.concluido ? (
+            <View accessible accessibilityLabel="Lembrete agendado" style={estilos.sino}>
+              <Ionicons name="notifications-outline" size={20} color={cores.primaria} />
+            </View>
+          ) : null}
         </View>
       </Pressable>
     </View>
@@ -75,6 +82,8 @@ const estilos = StyleSheet.create({
   descricao: { fontSize: 17, fontWeight: '700', color: cores.texto },
   riscado: { textDecorationLine: 'line-through', color: cores.textoSuave },
   detalhe: { fontSize: 16, color: cores.textoSuave },
-  etiqueta: { alignSelf: 'flex-start', borderRadius: raio.pilula, paddingHorizontal: 12, paddingVertical: 4, marginTop: 2 },
+  linhaEtiqueta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
+  etiqueta: { borderRadius: raio.pilula, paddingHorizontal: 12, paddingVertical: 4 },
+  sino: { height: 28, justifyContent: 'center' },
   textoEtiqueta: { fontSize: 16, fontWeight: '600' },
 });

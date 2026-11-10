@@ -1,4 +1,11 @@
-import { lerInteiro, limitarNivelAlerta, limitarQuantidade, validarDisciplina } from './validacao';
+import {
+  lerInteiro,
+  limitarDiasAntes,
+  limitarHora,
+  limitarNivelAlerta,
+  limitarQuantidade,
+  validarDisciplina,
+} from './validacao';
 
 const entrada = (parcial = {}) => ({
   nome: 'Auditoria de Sistemas',
@@ -81,5 +88,18 @@ describe('limitarNivelAlerta', () => {
     expect(limitarNivelAlerta(3)).toBe(3);
     expect(limitarNivelAlerta(99)).toBe(30);
     expect(limitarNivelAlerta(2.6)).toBe(3);
+  });
+});
+
+describe('limites do lembrete', () => {
+  it('dias antes ficam entre 0 e 14', () => {
+    expect(limitarDiasAntes(-2)).toBe(0);
+    expect(limitarDiasAntes(3)).toBe(3);
+    expect(limitarDiasAntes(40)).toBe(14);
+  });
+  it('a hora fica entre 0 e 23', () => {
+    expect(limitarHora(-1)).toBe(0);
+    expect(limitarHora(8)).toBe(8);
+    expect(limitarHora(24)).toBe(23);
   });
 });

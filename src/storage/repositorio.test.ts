@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as repo from './repositorio';
-import { Compromisso, Disciplina, Falta } from '../domain/tipos';
+import { CONFIG_PADRAO, Compromisso, Disciplina, Falta } from '../domain/tipos';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
@@ -38,7 +38,7 @@ describe('repositório', () => {
     expect(await repo.listarDisciplinas()).toEqual([]);
     expect(await repo.listarFaltas()).toEqual([]);
     expect(await repo.listarCompromissos()).toEqual([]);
-    expect(await repo.lerConfig()).toEqual({ nivelAlerta: 3 });
+    expect(await repo.lerConfig()).toEqual(CONFIG_PADRAO);
   });
 
   it('salva e atualiza disciplinas', async () => {
@@ -82,15 +82,15 @@ describe('repositório', () => {
   });
 
   it('salva e lê o nível de alerta', async () => {
-    await repo.salvarConfig({ nivelAlerta: 6 });
-    expect(await repo.lerConfig()).toEqual({ nivelAlerta: 6 });
+    await repo.salvarConfig({ ...CONFIG_PADRAO, nivelAlerta: 6 });
+    expect(await repo.lerConfig()).toEqual({ ...CONFIG_PADRAO, nivelAlerta: 6 });
   });
 
   it('ignora configuração corrompida e volta ao padrão', async () => {
     await AsyncStorage.setItem('faltacerta:config', JSON.stringify({ nivelAlerta: 'abc' }));
-    expect(await repo.lerConfig()).toEqual({ nivelAlerta: 3 });
+    expect(await repo.lerConfig()).toEqual(CONFIG_PADRAO);
     await AsyncStorage.setItem('faltacerta:config', '{quebrado');
-    expect(await repo.lerConfig()).toEqual({ nivelAlerta: 3 });
+    expect(await repo.lerConfig()).toEqual(CONFIG_PADRAO);
   });
 
   it('não cai com dados corrompidos nas listas', async () => {
@@ -106,5 +106,44 @@ describe('repositório', () => {
     expect((await repo.listarDisciplinas())[0].id).toBe('velha');
     expect((await repo.listarFaltas('velha')).length).toBe(1);
     expect(await repo.listarCompromissos()).toEqual([]);
+  });
+
+  it('aproveita uma configuração antiga, só com o nível de alerta', async () => {
+    await AsyncStorage.setItem('faltacerta:config', JSON.stringify({ nivelAlerta: 5 }));
+    expect(await repo.lerConfig()).toEqual({ ...CONFIG_PADRAO, nivelAlerta: 5 });
+  });
+
+  it('valida cada campo da configuração separadamente', async () => {
+    await AsyncStorage.setItem(
+      'faltacerta:config',
+      JSON.stringify({ nivelAlerta: 4, lembreteAtivo: 'sim', lembreteDiasAntes: 99, lembreteHora: 20 })
+    );
+    expect(await repo.lerConfig()).toEqual({
+      nivelAlerta: 4,
+      lembreteAtivo: CONFIG_PADRAO.lembreteAtivo,
+      lembreteDiasAntes: CONFIG_PADRAO.lembreteDiasAntes,
+      lembreteHora: 20,
+    });
+  });
+
+  it('grava os prazos em bloco', async () => {
+    await repo.gravarCompromissos([comp('c1', 'a'), comp('c2', 'a')]);
+    expect((await repo.listarCompromissos()).map((c) => c.id)).toEqual(['c1', 'c2']);
+  });
+
+  it('substitui e apaga todos os dados, sem mexer na configuração', async () => {
+    await repo.salvarConfig({ ...CONFIG_PADRAO, nivelAlerta: 7 });
+    await repo.salvarDisciplina(disc('a'));
+    await repo.registrarFalta(falta('f1', 'a'));
+    await repo.salvarCompromisso(comp('c1', 'a'));
+
+    await repo.substituirTudo({ disciplinas: [disc('x')], faltas: [], compromissos: [] });
+    expect((await repo.listarDisciplinas()).map((d) => d.id)).toEqual(['x']);
+    expect(await repo.listarFaltas()).toEqual([]);
+
+    await repo.apagarTudo();
+    expect(await repo.listarDisciplinas()).toEqual([]);
+    expect(await repo.listarCompromissos()).toEqual([]);
+    expect((await repo.lerConfig()).nivelAlerta).toBe(7);
   });
 });

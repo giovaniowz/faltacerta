@@ -6,6 +6,10 @@ import {
   Config,
   Disciplina,
   Falta,
+  LEMBRETE_DIAS_ANTES_MAX,
+  LEMBRETE_DIAS_ANTES_MIN,
+  LEMBRETE_HORA_MAX,
+  LEMBRETE_HORA_MIN,
   NIVEL_ALERTA_MAX,
   NIVEL_ALERTA_MIN,
 } from '../domain/tipos';
@@ -123,18 +127,56 @@ export async function removerCompromisso(id: string): Promise<Compromisso[]> {
 
 // ---------- configurações ----------
 
-function configValida(c: unknown): c is Config {
-  if (typeof c !== 'object' || c === null) return false;
-  const nivel = (c as Config).nivelAlerta;
-  return Number.isInteger(nivel) && nivel >= NIVEL_ALERTA_MIN && nivel <= NIVEL_ALERTA_MAX;
+function inteiroEntre(valor: unknown, min: number, max: number, padrao: number): number {
+  return typeof valor === 'number' && Number.isInteger(valor) && valor >= min && valor <= max ? valor : padrao;
 }
 
+// Cada campo é validado sozinho: uma configuração antiga (só com o nível de alerta)
+// ou parcialmente corrompida continua valendo no que está certo.
 export async function lerConfig(): Promise<Config> {
-  const lida = await lerJSON<unknown>(CHAVE_CONFIG, CONFIG_PADRAO);
-  return configValida(lida) ? { ...CONFIG_PADRAO, ...lida } : CONFIG_PADRAO;
+  const lida = await lerJSON<unknown>(CHAVE_CONFIG, null);
+  if (typeof lida !== 'object' || lida === null) return CONFIG_PADRAO;
+  const l = lida as Partial<Record<keyof Config, unknown>>;
+  return {
+    nivelAlerta: inteiroEntre(l.nivelAlerta, NIVEL_ALERTA_MIN, NIVEL_ALERTA_MAX, CONFIG_PADRAO.nivelAlerta),
+    lembreteAtivo: typeof l.lembreteAtivo === 'boolean' ? l.lembreteAtivo : CONFIG_PADRAO.lembreteAtivo,
+    lembreteDiasAntes: inteiroEntre(
+      l.lembreteDiasAntes,
+      LEMBRETE_DIAS_ANTES_MIN,
+      LEMBRETE_DIAS_ANTES_MAX,
+      CONFIG_PADRAO.lembreteDiasAntes
+    ),
+    lembreteHora: inteiroEntre(l.lembreteHora, LEMBRETE_HORA_MIN, LEMBRETE_HORA_MAX, CONFIG_PADRAO.lembreteHora),
+  };
 }
 
 export async function salvarConfig(c: Config): Promise<Config> {
   await gravarJSON(CHAVE_CONFIG, c);
   return c;
+}
+
+// ---------- operações em bloco ----------
+
+// Regrava todos os prazos de uma vez (usado ao sincronizar os lembretes).
+export async function gravarCompromissos(lista: Compromisso[]): Promise<Compromisso[]> {
+  await gravarJSON(CHAVE_COMPROMISSOS, lista);
+  return lista;
+}
+
+export type DadosCompletos = {
+  disciplinas: Disciplina[];
+  faltas: Falta[];
+  compromissos: Compromisso[];
+};
+
+// Troca TODOS os dados (usado pelos dados de exemplo). A configuração não muda.
+export async function substituirTudo(dados: DadosCompletos): Promise<DadosCompletos> {
+  await gravarJSON(CHAVE_DISCIPLINAS, dados.disciplinas);
+  await gravarJSON(CHAVE_FALTAS, dados.faltas);
+  await gravarJSON(CHAVE_COMPROMISSOS, dados.compromissos);
+  return dados;
+}
+
+export async function apagarTudo(): Promise<DadosCompletos> {
+  return substituirTudo({ disciplinas: [], faltas: [], compromissos: [] });
 }

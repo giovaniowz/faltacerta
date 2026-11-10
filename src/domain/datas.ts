@@ -32,3 +32,10 @@ export function isoParaData(iso: string): Date {
   const [ano, mes, dia] = iso.split('-').map(Number);
   return new Date(ano, mes - 1, dia);
 }
+
+// Soma (ou subtrai) dias de calendário a uma data AAAA-MM-DD.
+export function somarDias(iso: string, dias: number): string {
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia + dias));
+  return `${data.getUTCFullYear()}-${doisDigitos(data.getUTCMonth() + 1)}-${doisDigitos(data.getUTCDate())}`;
+}

@@ -1,4 +1,4 @@
-import { ehFutura, formatarDataBR, hojeISO, isoParaData, paraDataISO } from './datas';
+import { ehFutura, formatarDataBR, hojeISO, isoParaData, paraDataISO, somarDias } from './datas';
 
 describe('datas', () => {
   it('usa a data local, mesmo à noite (sem virar o dia por causa do UTC)', () => {
@@ -30,5 +30,13 @@ describe('datas', () => {
     expect(data.getMonth()).toBe(10);
     expect(data.getDate()).toBe(10);
     expect(paraDataISO(data)).toBe('2026-11-10');
+  });
+
+  it('soma e subtrai dias, atravessando mês e ano', () => {
+    expect(somarDias('2026-11-03', 7)).toBe('2026-11-10');
+    expect(somarDias('2026-11-03', -3)).toBe('2026-10-31');
+    expect(somarDias('2026-12-30', 3)).toBe('2027-01-02');
+    expect(somarDias('2026-03-01', -1)).toBe('2026-02-28');
+    expect(somarDias('2026-11-03', 0)).toBe('2026-11-03');
   });
 });

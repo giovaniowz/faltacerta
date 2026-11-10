@@ -1,4 +1,11 @@
-import { NIVEL_ALERTA_MAX, NIVEL_ALERTA_MIN } from './tipos';
+import {
+  LEMBRETE_DIAS_ANTES_MAX,
+  LEMBRETE_DIAS_ANTES_MIN,
+  LEMBRETE_HORA_MAX,
+  LEMBRETE_HORA_MIN,
+  NIVEL_ALERTA_MAX,
+  NIVEL_ALERTA_MIN,
+} from './tipos';
 
 export type EntradaDisciplina = {
   nome: string;
@@ -68,4 +75,12 @@ export function limitarQuantidade(quantidade: number, aulasPorNoite: number): nu
 // Mantém o nível de alerta (em faltas restantes) dentro dos limites aceitos.
 export function limitarNivelAlerta(nivel: number): number {
   return Math.min(Math.max(Math.round(nivel), NIVEL_ALERTA_MIN), NIVEL_ALERTA_MAX);
+}
+
+export function limitarDiasAntes(dias: number): number {
+  return Math.min(Math.max(Math.round(dias), LEMBRETE_DIAS_ANTES_MIN), LEMBRETE_DIAS_ANTES_MAX);
+}
+
+export function limitarHora(hora: number): number {
+  return Math.min(Math.max(Math.round(hora), LEMBRETE_HORA_MIN), LEMBRETE_HORA_MAX);
 }

@@ -12,10 +12,11 @@ type Props = {
   onChange: (data: Date) => void;
   minimo?: Date;
   maximo?: Date;
+  rotuloVisivel?: boolean; // false quando já há um título acima (o rótulo continua valendo para leitores de tela)
 };
 
 // Seletor de data: calendário nativo no Android e seletor compacto no iOS.
-export default function CampoData({ rotulo, valor, onChange, minimo, maximo }: Props) {
+export default function CampoData({ rotulo, valor, onChange, minimo, maximo, rotuloVisivel = true }: Props) {
   const iso = paraDataISO(valor);
   const ehHoje = iso === hojeISO();
 
@@ -31,7 +32,7 @@ export default function CampoData({ rotulo, valor, onChange, minimo, maximo }: P
 
   return (
     <View style={estilos.bloco}>
-      <Text style={estilos.rotulo}>{rotulo}</Text>
+      {rotuloVisivel ? <Text style={estilos.rotulo}>{rotulo}</Text> : null}
       {Platform.OS === 'android' ? (
         <Pressable
           onPress={abrirAndroid}

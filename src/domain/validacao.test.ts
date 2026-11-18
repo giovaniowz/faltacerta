@@ -4,6 +4,7 @@ import {
   limitarHora,
   limitarNivelAlerta,
   limitarQuantidade,
+  nomeDuplicado,
   validarDisciplina,
 } from './validacao';
 
@@ -101,5 +102,17 @@ describe('limites do lembrete', () => {
     expect(limitarHora(-1)).toBe(0);
     expect(limitarHora(8)).toBe(8);
     expect(limitarHora(24)).toBe(23);
+  });
+});
+
+describe('nomeDuplicado', () => {
+  it('ignora maiúsculas, acentos e espaços nas pontas', () => {
+    expect(nomeDuplicado('  gestão de projetos ', ['Gestão de Projetos'])).toBe(true);
+    expect(nomeDuplicado('GESTAO DE PROJETOS', ['Gestão de Projetos'])).toBe(true);
+  });
+  it('não confunde nomes diferentes nem aceita vazio como duplicado', () => {
+    expect(nomeDuplicado('Redes II', ['Redes'])).toBe(false);
+    expect(nomeDuplicado('   ', [''])).toBe(false);
+    expect(nomeDuplicado('Redes', [])).toBe(false);
   });
 });

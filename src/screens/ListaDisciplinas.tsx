@@ -1,10 +1,9 @@
-import React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { resumoDaDisciplina } from '../domain/calculo';
 import type { AbaProps } from '../navegacao/tipos';
 import { useDados } from '../state/DadosContext';
 import { cores } from '../theme/cores';
-import Botao from '../components/Botao';
+import BotaoFlutuante from '../components/BotaoFlutuante';
 import CartaoDisciplina from '../components/CartaoDisciplina';
 import EstadoVazio from '../components/EstadoVazio';
 
@@ -23,6 +22,7 @@ export default function ListaDisciplinas({ navigation }: AbaProps<'Disciplinas'>
             icone="school-outline"
             titulo="Nenhuma disciplina ainda"
             texto="Cadastre a primeira para calcular seu limite de faltas."
+            acao={{ titulo: 'Nova disciplina', onPress: () => navigation.navigate('CadastroDisciplina') }}
           />
         }
         renderItem={({ item }) => (
@@ -34,15 +34,14 @@ export default function ListaDisciplinas({ navigation }: AbaProps<'Disciplinas'>
           />
         )}
       />
-      <View style={estilos.rodape}>
-        <Botao titulo="+ Nova disciplina" onPress={() => navigation.navigate('CadastroDisciplina')} />
-      </View>
+      {disciplinas.length > 0 ? (
+        <BotaoFlutuante titulo="Nova disciplina" onPress={() => navigation.navigate('CadastroDisciplina')} />
+      ) : null}
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: cores.fundo },
-  lista: { padding: 16, flexGrow: 1 },
-  rodape: { padding: 16, borderTopWidth: 1, borderTopColor: cores.borda, backgroundColor: cores.cartao },
+  lista: { padding: 16, paddingBottom: 100, flexGrow: 1 },
 });

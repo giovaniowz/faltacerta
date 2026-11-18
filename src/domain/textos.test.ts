@@ -1,4 +1,4 @@
-import { plural, rotuloStatus, textoStatus } from './textos';
+import { plural, rotuloStatus, saudacao, textoStatus } from './textos';
 import { Resumo } from './tipos';
 
 const resumo = (parcial: Partial<Resumo>): Resumo => ({
@@ -59,5 +59,20 @@ describe('rotuloStatus', () => {
     expect(rotuloStatus('alerta')).toBe('Perto do limite');
     expect(rotuloStatus('limite')).toBe('Limite atingido');
     expect(rotuloStatus('excedido')).toBe('Limite excedido');
+  });
+});
+
+describe('saudacao', () => {
+  it.each([
+    [0, 'Boa noite'],
+    [4, 'Boa noite'],
+    [5, 'Bom dia'],
+    [11, 'Bom dia'],
+    [12, 'Boa tarde'],
+    [17, 'Boa tarde'],
+    [18, 'Boa noite'],
+    [23, 'Boa noite'],
+  ])('às %ih: %s', (hora, esperado) => {
+    expect(saudacao(hora)).toBe(esperado);
   });
 });

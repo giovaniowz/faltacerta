@@ -39,3 +39,24 @@ export function somarDias(iso: string, dias: number): string {
   const data = new Date(Date.UTC(ano, mes - 1, dia + dias));
   return `${data.getUTCFullYear()}-${doisDigitos(data.getUTCMonth() + 1)}-${doisDigitos(data.getUTCDate())}`;
 }
+
+const DIAS_CURTOS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const DIAS_LONGOS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+function diaDaSemana(iso: string): number {
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  return new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay();
+}
+
+// '2026-11-18' -> 'ter, 18/11'
+export function formatarDataCurta(iso: string): string {
+  const [, mes, dia] = iso.split('-');
+  return `${DIAS_CURTOS[diaDaSemana(iso)]}, ${dia}/${mes}`;
+}
+
+// '2026-11-16' -> 'segunda-feira, 16 de novembro'
+export function dataPorExtenso(iso: string): string {
+  const [, mes, dia] = iso.split('-').map(Number);
+  return `${DIAS_LONGOS[diaDaSemana(iso)]}, ${dia} de ${MESES[mes - 1]}`;
+}

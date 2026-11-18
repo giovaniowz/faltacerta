@@ -1,10 +1,16 @@
-import React, { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { previaDoLimite } from '../domain/calculo';
 import { gerarId } from '../domain/ids';
 import { plural } from '../domain/textos';
 import { AULAS_POR_NOITE_PADRAO } from '../domain/tipos';
-import { ErrosDisciplina, MAX_AULAS_POR_NOITE, lerInteiro, validarDisciplina } from '../domain/validacao';
+import {
+  ErrosDisciplina,
+  MAX_AULAS_POR_NOITE,
+  lerInteiro,
+  nomeDuplicado,
+  validarDisciplina,
+} from '../domain/validacao';
 import type { PilhaProps } from '../navegacao/tipos';
 import { useDados } from '../state/DadosContext';
 import { cores } from '../theme/cores';
@@ -12,6 +18,14 @@ import { raio } from '../theme/tema';
 import Botao from '../components/Botao';
 import Campo, { estiloInput } from '../components/Campo';
 import { confirmarExclusao } from '../components/confirmar';
+import Segmentado from '../components/Segmentado';
+
+const CARGAS_COMUNS = [30, 45, 60, 80].map((h) => ({ valor: String(h), rotulo: `${h}h`, acessivel: `${h} horas` }));
+const AULAS = Array.from({ length: MAX_AULAS_POR_NOITE }, (_, i) => ({
+  valor: String(i + 1),
+  rotulo: String(i + 1),
+  acessivel: `${i + 1} ${i === 0 ? 'aula' : 'aulas'} por noite`,
+}));
 
 // US01 e US08: cadastrar ou editar uma disciplina, mostrando o limite de faltas calculado.
 export default function CadastroDisciplina({ navigation, route }: PilhaProps<'CadastroDisciplina'>) {
@@ -40,7 +54,7 @@ export default function CadastroDisciplina({ navigation, route }: PilhaProps<'Ca
     );
   }
 
-  // Prévia do limite enquanto a pessoa digita (só quando os números são válidos).
+  // Prévia do limite enquanto a pessoa preenche (só quando os números são válidos).
   const carga = lerInteiro(cargaHoraria);
   const aulas = lerInteiro(aulasPorNoite);
   const previa =
@@ -52,6 +66,11 @@ export default function CadastroDisciplina({ navigation, route }: PilhaProps<'Ca
     const resultado = validarDisciplina({ nome, professor, cargaHoraria, aulasPorNoite });
     if (!resultado.valida) {
       setErros(resultado.erros);
+      return;
+    }
+    const outras = disciplinas.filter((d) => d.id !== existente?.id).map((d) => d.nome);
+    if (nomeDuplicado(resultado.valores.nome, outras)) {
+      setErros({ nome: 'Já existe uma disciplina com esse nome.' });
       return;
     }
     setErros({});
@@ -86,7 +105,12 @@ export default function CadastroDisciplina({ navigation, route }: PilhaProps<'Ca
   }
 
   return (
-    <ScrollView style={estilos.tela} contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={estilos.tela}
+      contentContainerStyle={estilos.conteudo}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+    >
       <Campo rotulo="Nome da disciplina" erro={erros.nome}>
         <TextInput
           style={estiloInput}
@@ -109,26 +133,20 @@ export default function CadastroDisciplina({ navigation, route }: PilhaProps<'Ca
       </Campo>
 
       <Campo rotulo="Carga horária (em horas)" erro={erros.cargaHoraria}>
+        <Segmentado opcoes={CARGAS_COMUNS} valor={cargaHoraria} onChange={setCargaHoraria} />
         <TextInput
           style={estiloInput}
           value={cargaHoraria}
           onChangeText={setCargaHoraria}
           keyboardType="number-pad"
           maxLength={4}
-          placeholder="Ex.: 60"
+          placeholder="Ou digite: 60"
           accessibilityLabel="Carga horária em horas"
         />
       </Campo>
 
-      <Campo rotulo={`Aulas por noite (1 a ${MAX_AULAS_POR_NOITE})`} erro={erros.aulasPorNoite}>
-        <TextInput
-          style={estiloInput}
-          value={aulasPorNoite}
-          onChangeText={setAulasPorNoite}
-          keyboardType="number-pad"
-          maxLength={1}
-          accessibilityLabel="Aulas por noite"
-        />
+      <Campo rotulo="Aulas por noite" erro={erros.aulasPorNoite}>
+        <Segmentado opcoes={AULAS} valor={aulasPorNoite} onChange={setAulasPorNoite} />
       </Campo>
 
       {previa ? (
@@ -152,8 +170,8 @@ export default function CadastroDisciplina({ navigation, route }: PilhaProps<'Ca
 
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: cores.fundo },
-  conteudo: { padding: 16, gap: 16 },
+  conteudo: { padding: 16, gap: 18, paddingBottom: 32 },
   previa: { backgroundColor: cores.status.ok.fundo, borderRadius: raio.md, padding: 14 },
-  textoPrevia: { fontSize: 16, fontWeight: '600', color: cores.status.ok.texto },
+  textoPrevia: { fontSize: 16, fontWeight: '700', color: cores.status.ok.texto },
   aviso: { fontSize: 16, color: cores.textoSuave, textAlign: 'center', marginTop: 16 },
 });

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import { useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { descreverLembrete, rotuloHora } from '../domain/lembretes';
 import { plural } from '../domain/textos';
@@ -27,6 +27,7 @@ import Contador from '../components/Contador';
 export default function Configuracoes({ navigation }: PilhaProps<'Configuracoes'>) {
   const { config, salvarConfig, permissaoNotificacoes, pedirPermissaoNotificacoes, carregarDadosDeExemplo, apagarTudo } =
     useDados();
+  const [demoAberta, setDemoAberta] = useState(false);
 
   async function atualizar(parcial: Partial<Config>) {
     try {
@@ -156,40 +157,52 @@ export default function Configuracoes({ navigation }: PilhaProps<'Configuracoes'
       </Pressable>
 
       <View style={estilos.cartao}>
-        <Text style={estilos.titulo} accessibilityRole="header">
-          Demonstração
-        </Text>
-        <Text style={estilos.texto}>
-          Carregue dados de exemplo para mostrar o app ou apague tudo para recomeçar. As configurações acima não mudam.
-        </Text>
-        <Botao
-          titulo="Carregar dados de exemplo"
-          variante="secundaria"
-          icone="albums-outline"
-          onPress={() =>
-            confirmarAcao(
-              'Carregar dados de exemplo?',
-              'Suas disciplinas, faltas e prazos atuais serão apagados e trocados por dados de exemplo. Isso não pode ser desfeito.',
-              'Carregar',
-              () => executar(carregarDadosDeExemplo),
-              true
-            )
-          }
-        />
-        <Botao
-          titulo="Apagar todos os dados"
-          variante="perigo"
-          icone="trash-outline"
-          onPress={() =>
-            confirmarAcao(
-              'Apagar todos os dados?',
-              'Todas as disciplinas, faltas e prazos serão apagados. Isso não pode ser desfeito.',
-              'Apagar',
-              () => executar(apagarTudo),
-              true
-            )
-          }
-        />
+        <Pressable
+          onPress={() => setDemoAberta((aberta) => !aberta)}
+          accessibilityRole="button"
+          accessibilityLabel="Modo demonstração"
+          accessibilityState={{ expanded: demoAberta }}
+          style={estilos.cabecalhoDemo}
+        >
+          <Text style={[estilos.titulo, estilos.tituloDemo]}>Modo demonstração</Text>
+          <Ionicons name={demoAberta ? 'chevron-up' : 'chevron-down'} size={22} color={cores.textoSuave} />
+        </Pressable>
+        {demoAberta ? (
+          <>
+            <Text style={estilos.texto}>
+              Carregue dados de exemplo para mostrar o app ou apague tudo para recomeçar. As configurações acima não
+              mudam.
+            </Text>
+            <Botao
+              titulo="Carregar dados de exemplo"
+              variante="secundaria"
+              icone="albums-outline"
+              onPress={() =>
+                confirmarAcao(
+                  'Carregar dados de exemplo?',
+                  'Suas disciplinas, faltas e prazos atuais serão apagados e trocados por dados de exemplo. Isso não pode ser desfeito.',
+                  'Carregar',
+                  () => executar(carregarDadosDeExemplo),
+                  true
+                )
+              }
+            />
+            <Botao
+              titulo="Apagar todos os dados"
+              variante="perigo"
+              icone="trash-outline"
+              onPress={() =>
+                confirmarAcao(
+                  'Apagar todos os dados?',
+                  'Todas as disciplinas, faltas e prazos serão apagados. Isso não pode ser desfeito.',
+                  'Apagar',
+                  () => executar(apagarTudo),
+                  true
+                )
+              }
+            />
+          </>
+        ) : null}
       </View>
     </ScrollView>
   );
@@ -219,5 +232,7 @@ const estilos = StyleSheet.create({
     ...sombra,
   },
   pressionado: { opacity: 0.7 },
+  cabecalhoDemo: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  tituloDemo: { flex: 1 },
   textoLink: { flex: 1, fontSize: 16, fontWeight: '600', color: cores.texto },
 });

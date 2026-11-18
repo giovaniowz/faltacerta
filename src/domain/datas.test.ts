@@ -1,4 +1,13 @@
-import { ehFutura, formatarDataBR, hojeISO, isoParaData, paraDataISO, somarDias } from './datas';
+import {
+  dataPorExtenso,
+  ehFutura,
+  formatarDataBR,
+  formatarDataCurta,
+  hojeISO,
+  isoParaData,
+  paraDataISO,
+  somarDias,
+} from './datas';
 
 describe('datas', () => {
   it('usa a data local, mesmo à noite (sem virar o dia por causa do UTC)', () => {
@@ -38,5 +47,18 @@ describe('datas', () => {
     expect(somarDias('2026-12-30', 3)).toBe('2027-01-02');
     expect(somarDias('2026-03-01', -1)).toBe('2026-02-28');
     expect(somarDias('2026-11-03', 0)).toBe('2026-11-03');
+  });
+
+  it('mostra o dia da semana na data curta', () => {
+    expect(formatarDataCurta('2026-11-16')).toBe('seg, 16/11');
+    expect(formatarDataCurta('2026-11-18')).toBe('qua, 18/11');
+    expect(formatarDataCurta('2026-11-21')).toBe('sáb, 21/11');
+    expect(formatarDataCurta('2026-11-22')).toBe('dom, 22/11');
+  });
+
+  it('escreve a data por extenso', () => {
+    expect(dataPorExtenso('2026-11-16')).toBe('segunda-feira, 16 de novembro');
+    expect(dataPorExtenso('2026-03-01')).toBe('domingo, 1 de março');
+    expect(dataPorExtenso('2026-12-25')).toBe('sexta-feira, 25 de dezembro');
   });
 });

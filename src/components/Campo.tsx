@@ -1,8 +1,8 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { cores } from '../theme/cores';
 
-type Props = { rotulo: string; erro?: string; children: React.ReactNode };
+type Props = { rotulo: string; erro?: string; children: ReactNode };
 
 // Rótulo + campo + mensagem de erro, no mesmo padrão em todos os formulários.
 export default function Campo({ rotulo, erro, children }: Props) {
@@ -27,7 +27,7 @@ export const estiloInput = {
 } as const;
 
 const estilos = StyleSheet.create({
-  campo: { gap: 6 },
-  rotulo: { fontSize: 16, fontWeight: '600', color: cores.texto },
+  campo: { gap: 8 },
+  rotulo: { fontSize: 16, fontWeight: '700', color: cores.texto },
   erro: { fontSize: 16, color: cores.status.excedido.texto },
 });

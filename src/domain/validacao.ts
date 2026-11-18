@@ -84,3 +84,15 @@ export function limitarDiasAntes(dias: number): number {
 export function limitarHora(hora: number): number {
   return Math.min(Math.max(Math.round(hora), LEMBRETE_HORA_MIN), LEMBRETE_HORA_MAX);
 }
+
+// Já existe outra disciplina com este nome? Ignora maiúsculas, acentos e espaços nas pontas.
+export function nomeDuplicado(nome: string, nomesExistentes: string[]): boolean {
+  const normaliza = (t: string) =>
+    t
+      .trim()
+      .toLocaleLowerCase('pt-BR')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  const alvo = normaliza(nome);
+  return alvo !== '' && nomesExistentes.some((n) => normaliza(n) === alvo);
+}

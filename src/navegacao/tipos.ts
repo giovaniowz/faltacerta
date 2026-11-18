@@ -12,7 +12,7 @@ export type RootStackParamList = {
   Abas: NavigatorScreenParams<AbasParamList> | undefined;
   CadastroDisciplina: { disciplinaId?: string } | undefined;
   DetalheDisciplina: { disciplinaId: string };
-  RegistrarFalta: { disciplinaId: string; faltaId?: string };
+  RegistrarFalta: { disciplinaId?: string; faltaId?: string } | undefined;
   CadastroCompromisso: { compromissoId?: string; disciplinaId?: string } | undefined;
   Configuracoes: undefined;
   ComoCalculamos: undefined;

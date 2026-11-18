@@ -1,5 +1,5 @@
-import { disciplinasEmAtencao, resumosDasDisciplinas } from './painel';
-import { Disciplina, Falta } from './tipos';
+import { disciplinasEmAtencao, resumoDoPainel, resumosDasDisciplinas } from './painel';
+import { Compromisso, Disciplina, Falta } from './tipos';
 
 const d = (id: string, nome: string, carga = 60): Disciplina => ({
   id,
@@ -49,5 +49,53 @@ describe('painel', () => {
 
   it('devolve lista vazia quando está tudo certo', () => {
     expect(disciplinasEmAtencao(ds, [], 3)).toEqual([]);
+  });
+});
+
+describe('resumoDoPainel', () => {
+  const hoje = '2026-11-16';
+  const comp = (id: string, prazo: string, descricao = 'Prova 1'): Compromisso => ({
+    id,
+    disciplinaId: 'a',
+    tipo: 'prova',
+    descricao,
+    prazo,
+    concluido: false,
+    criadoEm: '2026-11-01T00:00:00.000Z',
+  });
+  const ds = [d('a', 'Redes'), d('b', 'BD'), d('c', 'Auditoria')];
+  const atencao = (faltas: Falta[]) => disciplinasEmAtencao(ds, faltas, 3);
+
+  it('tudo certo quando nada pede atenção e não há prazos', () => {
+    expect(resumoDoPainel([], [], [], hoje)).toEqual({
+      titulo: 'Tudo certo por aqui',
+      subtitulo: 'Nenhum prazo pendente',
+      tom: 'ok',
+    });
+  });
+
+  it('conta as disciplinas em atenção e usa o tom de atenção para alerta', () => {
+    const r = resumoDoPainel(atencao(noites('a', 4)), [], [comp('x', '2026-11-18')], hoje);
+    expect(r.titulo).toBe('1 disciplina precisa de atenção');
+    expect(r.subtitulo).toBe('Próximo prazo: Prova 1, em 2 dias');
+    expect(r.tom).toBe('atencao');
+  });
+
+  it('usa o tom crítico para limite atingido ou excedido', () => {
+    const r = resumoDoPainel(atencao([...noites('a', 5), ...noites('b', 4)]), [], [], hoje);
+    expect(r.titulo).toBe('2 disciplinas precisam de atenção');
+    expect(r.tom).toBe('critico');
+  });
+
+  it('prazos atrasados têm prioridade no subtítulo e deixam o tom crítico', () => {
+    const r = resumoDoPainel([], [comp('x', '2026-11-14'), comp('y', '2026-11-10')], [comp('z', '2026-11-20')], hoje);
+    expect(r.subtitulo).toBe('2 prazos atrasados');
+    expect(r.tom).toBe('critico');
+    expect(resumoDoPainel([], [comp('x', '2026-11-14')], [], hoje).subtitulo).toBe('1 prazo atrasado');
+  });
+
+  it('descreve o próximo prazo de hoje e de amanhã', () => {
+    expect(resumoDoPainel([], [], [comp('x', hoje, 'Seminário')], hoje).subtitulo).toBe('Próximo prazo: Seminário, hoje');
+    expect(resumoDoPainel([], [], [comp('x', '2026-11-17')], hoje).subtitulo).toBe('Próximo prazo: Prova 1, amanhã');
   });
 });

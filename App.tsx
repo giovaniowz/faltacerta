@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { AbasParamList, RootStackParamList } from './src/navegacao/tipos';
 import { DadosProvider, useDados } from './src/state/DadosContext';
+import Marca from './src/components/Marca';
 import { cores } from './src/theme/cores';
 import CadastroCompromisso from './src/screens/CadastroCompromisso';
 import ComoCalculamos from './src/screens/ComoCalculamos';
@@ -35,6 +36,7 @@ const tema = {
 };
 
 function AbasPrincipais() {
+  const insets = useSafeAreaInsets();
   return (
     <Abas.Navigator
       initialRouteName="Inicio"
@@ -44,8 +46,16 @@ function AbasPrincipais() {
         headerTitleStyle: { fontWeight: '700', color: cores.texto },
         tabBarActiveTintColor: cores.primaria,
         tabBarInactiveTintColor: '#6B7280',
-        tabBarStyle: { backgroundColor: cores.cartao, borderTopColor: cores.borda },
-        tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
+        // Altura própria (ícone + rótulo + folga) somada à área segura do aparelho,
+        // para o nome da aba nunca ser cortado.
+        tabBarStyle: {
+          backgroundColor: cores.cartao,
+          borderTopColor: cores.borda,
+          height: 68 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: insets.bottom + 6,
+        },
+        tabBarLabelStyle: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
       }}
     >
       <Abas.Screen
@@ -53,7 +63,7 @@ function AbasPrincipais() {
         component={Inicio}
         options={{
           title: 'Início',
-          headerTitle: 'FaltaCerta',
+          headerTitle: () => <Marca />,
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
@@ -120,8 +130,10 @@ function Rotas() {
 
 export default function App() {
   return (
-    <DadosProvider>
-      <Rotas />
-    </DadosProvider>
+    <SafeAreaProvider>
+      <DadosProvider>
+        <Rotas />
+      </DadosProvider>
+    </SafeAreaProvider>
   );
 }

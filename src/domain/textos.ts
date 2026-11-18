@@ -36,3 +36,10 @@ export function textoStatus(r: Resumo): string {
       return `Limite excedido em ${plural(r.excedidoEm, 'falta', 'faltas')}.`;
   }
 }
+
+// Bom dia (5h às 11h59), boa tarde (12h às 17h59) e boa noite nos demais horários.
+export function saudacao(hora: number): string {
+  if (hora >= 5 && hora < 12) return 'Bom dia';
+  if (hora >= 12 && hora < 18) return 'Boa tarde';
+  return 'Boa noite';
+}

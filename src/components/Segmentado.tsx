@@ -1,9 +1,8 @@
-import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { cores } from '../theme/cores';
 import { raio } from '../theme/tema';
 
-type Opcao<T extends string> = { valor: T; rotulo: string };
+type Opcao<T extends string> = { valor: T; rotulo: string; acessivel?: string };
 type Props<T extends string> = { opcoes: Opcao<T>[]; valor: T; onChange: (valor: T) => void };
 
 // Seletor de uma opção entre poucas (ex.: Prova | Trabalho, filtros da lista de prazos).
@@ -17,7 +16,7 @@ export default function Segmentado<T extends string>({ opcoes, valor, onChange }
             key={o.valor}
             onPress={() => onChange(o.valor)}
             accessibilityRole="button"
-            accessibilityLabel={o.rotulo}
+            accessibilityLabel={o.acessivel ?? o.rotulo}
             accessibilityState={{ selected: ativo }}
             style={[estilos.opcao, ativo && estilos.ativa]}
           >

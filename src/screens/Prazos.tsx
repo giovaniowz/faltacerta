@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Alert, SectionList, StyleSheet, Text, View } from 'react-native';
-import { hojeISO } from '../domain/datas';
 import { agruparPrazos } from '../domain/prazos';
 import { Compromisso, TipoCompromisso } from '../domain/tipos';
 import type { AbaProps } from '../navegacao/tipos';
 import { useDados } from '../state/DadosContext';
+import { useHoje } from '../state/useHoje';
 import { cores } from '../theme/cores';
-import Botao from '../components/Botao';
+import BotaoFlutuante from '../components/BotaoFlutuante';
 import EstadoVazio from '../components/EstadoVazio';
 import LinhaPrazo from '../components/LinhaPrazo';
 import Segmentado from '../components/Segmentado';
@@ -23,7 +23,7 @@ const FILTROS: { valor: Filtro; rotulo: string }[] = [
 export default function Prazos({ navigation }: AbaProps<'Prazos'>) {
   const { disciplinas, compromissos, atualizarCompromisso } = useDados();
   const [filtro, setFiltro] = useState<Filtro>('todos');
-  const hoje = hojeISO();
+  const hoje = useHoje();
 
   const visiveis = filtro === 'todos' ? compromissos : compromissos.filter((c) => c.tipo === filtro);
   const grupos = agruparPrazos(visiveis, hoje);
@@ -97,9 +97,7 @@ export default function Prazos({ navigation }: AbaProps<'Prazos'>) {
         )}
       />
       {semDisciplinas ? null : (
-        <View style={estilos.rodape}>
-          <Botao titulo="+ Novo prazo" onPress={() => navigation.navigate('CadastroCompromisso')} />
-        </View>
+        <BotaoFlutuante titulo="Novo prazo" onPress={() => navigation.navigate('CadastroCompromisso')} />
       )}
     </View>
   );
@@ -107,8 +105,7 @@ export default function Prazos({ navigation }: AbaProps<'Prazos'>) {
 
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: cores.fundo },
-  lista: { padding: 16, flexGrow: 1 },
+  lista: { padding: 16, paddingBottom: 100, flexGrow: 1 },
   filtros: { marginBottom: 12 },
   secao: { fontSize: 18, fontWeight: '700', marginTop: 8, marginBottom: 10 },
-  rodape: { padding: 16, borderTopWidth: 1, borderTopColor: cores.borda, backgroundColor: cores.cartao },
 });

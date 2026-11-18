@@ -2,17 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useLayoutEffect } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { faltasDaDisciplina, resumoDaDisciplina } from '../domain/calculo';
-import { formatarDataBR } from '../domain/datas';
-import { FREQUENCIA_MINIMA, formatarPercentual, frequenciaDe } from '../domain/frequencia';
+import { formatarDataBR, formatarDataCurta } from '../domain/datas';
 import { plural } from '../domain/textos';
 import type { PilhaProps } from '../navegacao/tipos';
 import { useDados } from '../state/DadosContext';
 import { cores } from '../theme/cores';
 import { raio, sombra } from '../theme/tema';
-import BannerStatus from '../components/BannerStatus';
 import Botao from '../components/Botao';
 import BotaoIcone from '../components/BotaoIcone';
 import PossoFaltar from '../components/PossoFaltar';
+import ResumoDisciplina from '../components/ResumoDisciplina';
 
 // US03, US04 e US08: faltas e noites restantes, alerta e histórico (que pode ser editado).
 export default function DetalheDisciplina({ navigation, route }: PilhaProps<'DetalheDisciplina'>) {
@@ -47,30 +46,7 @@ export default function DetalheDisciplina({ navigation, route }: PilhaProps<'Det
 
   const cabecalho = (
     <View style={estilos.cabecalho}>
-      <View style={estilos.destaques}>
-        <View style={estilos.destaque}>
-          <Text style={estilos.numero}>{Math.max(0, resumo.faltasRestantes)}</Text>
-          <Text style={estilos.legenda}>{resumo.faltasRestantes === 1 ? 'falta restante' : 'faltas restantes'}</Text>
-        </View>
-        <View style={estilos.destaque}>
-          <Text style={estilos.numero}>{resumo.noitesRestantes}</Text>
-          <Text style={estilos.legenda}>{resumo.noitesRestantes === 1 ? 'noite restante' : 'noites restantes'}</Text>
-        </View>
-      </View>
-
-      <Text style={estilos.dados}>
-        Carga horária: {disciplina.cargaHoraria}h · Limite: {plural(resumo.limite, 'falta', 'faltas')} · Registradas:{' '}
-        {resumo.faltasRegistradas}
-      </Text>
-
-      <Text style={estilos.dados}>
-        Frequência: {formatarPercentual(frequenciaDe(disciplina.cargaHoraria, resumo.faltasRegistradas))} · mínimo
-        exigido: {FREQUENCIA_MINIMA}%
-      </Text>
-
-      <BannerStatus resumo={resumo} />
-
-      <PossoFaltar disciplina={disciplina} faltas={faltas} nivelAlerta={config.nivelAlerta} />
+      <ResumoDisciplina disciplina={disciplina} resumo={resumo} />
 
       <Botao
         titulo="Registrar falta"
@@ -78,7 +54,11 @@ export default function DetalheDisciplina({ navigation, route }: PilhaProps<'Det
         onPress={() => navigation.navigate('RegistrarFalta', { disciplinaId: disciplina.id })}
       />
 
-      <Text style={estilos.titulo}>Histórico de faltas</Text>
+      <PossoFaltar disciplina={disciplina} faltas={faltas} nivelAlerta={config.nivelAlerta} />
+
+      <Text style={estilos.titulo} accessibilityRole="header">
+        Histórico de faltas
+      </Text>
     </View>
   );
 
@@ -97,7 +77,7 @@ export default function DetalheDisciplina({ navigation, route }: PilhaProps<'Det
           accessibilityLabel={`Editar falta de ${formatarDataBR(item.data)}`}
           style={({ pressed }) => [estilos.linha, pressed && estilos.pressionada]}
         >
-          <Text style={estilos.textoLinha}>{formatarDataBR(item.data)}</Text>
+          <Text style={estilos.textoLinha}>{formatarDataCurta(item.data)}</Text>
           <View style={estilos.direita}>
             <Text style={estilos.textoLinha}>{plural(item.quantidade, 'falta', 'faltas')}</Text>
             <Ionicons name="create-outline" size={20} color={cores.textoSuave} />
@@ -112,18 +92,6 @@ const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: cores.fundo },
   conteudo: { padding: 16 },
   cabecalho: { gap: 16, marginBottom: 8 },
-  destaques: { flexDirection: 'row', gap: 12 },
-  destaque: {
-    flex: 1,
-    backgroundColor: cores.cartao,
-    borderRadius: raio.lg,
-    padding: 14,
-    alignItems: 'center',
-    ...sombra,
-  },
-  numero: { fontSize: 40, fontWeight: '700', color: cores.texto },
-  legenda: { fontSize: 16, color: cores.textoSuave },
-  dados: { fontSize: 16, lineHeight: 22, color: cores.texto },
   titulo: { fontSize: 18, fontWeight: '700', color: cores.texto, marginTop: 8 },
   linha: {
     minHeight: 52,

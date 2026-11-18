@@ -63,17 +63,22 @@ export function DadosProvider({ children, servico = servicoExpo }: Props) {
   // Ao abrir o app, carrega tudo do celular e confere os avisos agendados.
   useEffect(() => {
     enfileirar(async () => {
-      const [ds, fs, cs, cfg] = await Promise.all([
-        repo.listarDisciplinas(),
-        repo.listarFaltas(),
-        repo.listarCompromissos(),
-        repo.lerConfig(),
-      ]);
-      setDisciplinas(ds);
-      setFaltas(fs);
-      setCompromissos(cs);
-      setConfig(cfg);
-      setCarregando(false);
+      try {
+        const [ds, fs, cs, cfg] = await Promise.all([
+          repo.listarDisciplinas(),
+          repo.listarFaltas(),
+          repo.listarCompromissos(),
+          repo.lerConfig(),
+        ]);
+        setDisciplinas(ds);
+        setFaltas(fs);
+        setCompromissos(cs);
+        setConfig(cfg);
+      } catch {
+        // Se a leitura falhar, o app abre vazio em vez de ficar na tela de espera para sempre.
+      } finally {
+        setCarregando(false);
+      }
       await sincronizar(false);
     });
   }, [enfileirar, sincronizar]);

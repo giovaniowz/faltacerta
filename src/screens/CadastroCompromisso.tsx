@@ -1,21 +1,24 @@
 import React, { useLayoutEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { hojeISO, isoParaData, paraDataISO } from '../domain/datas';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { hojeISO, isoParaData, paraDataISO, somarDias } from '../domain/datas';
 import { gerarId } from '../domain/ids';
 import { estadoDoLembrete, textoEstadoLembrete } from '../domain/lembretes';
 import { ErrosCompromisso, validarCompromisso } from '../domain/prazos';
 import { TipoCompromisso } from '../domain/tipos';
 import type { PilhaProps } from '../navegacao/tipos';
 import { useDados } from '../state/DadosContext';
+import { useHoje } from '../state/useHoje';
 import { cores } from '../theme/cores';
 import { raio } from '../theme/tema';
+import AtalhosData from '../components/AtalhosData';
 import Botao from '../components/Botao';
 import Campo, { estiloInput } from '../components/Campo';
 import CampoData from '../components/CampoData';
 import { confirmarExclusao } from '../components/confirmar';
 import EstadoVazio from '../components/EstadoVazio';
 import Segmentado from '../components/Segmentado';
+import SeletorDisciplina from '../components/SeletorDisciplina';
 
 const TIPOS: { valor: TipoCompromisso; rotulo: string }[] = [
   { valor: 'prova', rotulo: 'Prova' },
@@ -27,6 +30,7 @@ export default function CadastroCompromisso({ navigation, route }: PilhaProps<'C
   const idEdicao = route.params?.compromissoId;
   const { disciplinas, compromissos, config, adicionarCompromisso, atualizarCompromisso, removerCompromisso } = useDados();
   const existente = idEdicao ? compromissos.find((c) => c.id === idEdicao) : undefined;
+  const hoje = useHoje();
 
   const [tipo, setTipo] = useState<TipoCompromisso>(existente?.tipo ?? 'prova');
   const [descricao, setDescricao] = useState(existente?.descricao ?? '');
@@ -120,7 +124,12 @@ export default function CadastroCompromisso({ navigation, route }: PilhaProps<'C
   }
 
   return (
-    <ScrollView style={estilos.tela} contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={estilos.tela}
+      contentContainerStyle={estilos.conteudo}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+    >
       <Campo rotulo="Tipo">
         <Segmentado opcoes={TIPOS} valor={tipo} onChange={setTipo} />
       </Campo>
@@ -137,32 +146,21 @@ export default function CadastroCompromisso({ navigation, route }: PilhaProps<'C
       </Campo>
 
       <Campo rotulo="Disciplina" erro={erros.disciplinaId}>
-        <View style={estilos.opcoes}>
-          {disciplinas.map((d) => {
-            const ativa = d.id === disciplinaId;
-            return (
-              <Pressable
-                key={d.id}
-                onPress={() => setDisciplinaId(d.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`Disciplina ${d.nome}`}
-                accessibilityState={{ selected: ativa }}
-                style={[estilos.opcao, ativa && estilos.opcaoAtiva]}
-              >
-                <Text style={[estilos.textoOpcao, ativa && estilos.textoOpcaoAtiva]}>{d.nome}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <SeletorDisciplina disciplinas={disciplinas} valor={disciplinaId} onChange={setDisciplinaId} />
       </Campo>
 
-      <View>
-        <CampoData
-          rotulo="Prazo"
+      <View style={estilos.bloco}>
+        <Text style={estilos.rotulo}>Prazo</Text>
+        <AtalhosData
+          atalhos={[
+            { rotulo: 'Hoje', data: isoParaData(hoje) },
+            { rotulo: 'Amanhã', data: isoParaData(somarDias(hoje, 1)) },
+            { rotulo: 'Em 1 semana', data: isoParaData(somarDias(hoje, 7)) },
+          ]}
           valor={prazo}
           onChange={setPrazo}
-          minimo={existente ? undefined : new Date()}
         />
+        <CampoData rotulo="Data do prazo" valor={prazo} onChange={setPrazo} minimo={existente ? undefined : new Date()} rotuloVisivel={false} />
         {erros.prazo ? <Text style={estilos.erro}>{erros.prazo}</Text> : null}
       </View>
 
@@ -185,20 +183,8 @@ export default function CadastroCompromisso({ navigation, route }: PilhaProps<'C
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: cores.fundo },
   conteudo: { padding: 16, gap: 16 },
-  opcoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  opcao: {
-    minHeight: 44,
-    paddingHorizontal: 14,
-    borderRadius: raio.pilula,
-    borderWidth: 1,
-    borderColor: cores.borda,
-    backgroundColor: cores.cartao,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  opcaoAtiva: { backgroundColor: cores.primariaSuave, borderColor: cores.primaria, borderWidth: 2 },
-  textoOpcao: { fontSize: 16, color: cores.texto },
-  textoOpcaoAtiva: { color: cores.primaria, fontWeight: '700' },
+  bloco: { gap: 10 },
+  rotulo: { fontSize: 16, fontWeight: '700', color: cores.texto },
   erro: { fontSize: 16, color: cores.status.excedido.texto, marginTop: 6 },
   lembrete: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: cores.primariaSuave, borderRadius: raio.md, padding: 12 },
   textoLembrete: { flex: 1, fontSize: 16, lineHeight: 22, color: cores.texto },

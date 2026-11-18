@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatarPercentual, frequenciaDe } from '../domain/frequencia';
-import { Disciplina, Resumo } from '../domain/tipos';
 import { rotuloStatus } from '../domain/textos';
+import { Disciplina, Resumo } from '../domain/tipos';
 import { cores } from '../theme/cores';
 import { raio, sombra } from '../theme/tema';
-import Botao from './Botao';
+import BarraProgresso from './BarraProgresso';
 import { iconeStatus } from './icones';
 
 type Props = {
@@ -16,11 +15,13 @@ type Props = {
   onRegistrarFalta: () => void;
 };
 
+// Cartão compacto: o número que importa (faltas restantes) em destaque, a barra de uso do limite
+// e o atalho para registrar uma falta sem abrir a disciplina.
 export default function CartaoDisciplina({ disciplina, resumo, onAbrir, onRegistrarFalta }: Props) {
   const paleta = cores.status[resumo.status];
   // Com limite 0 a barra já aparece cheia.
-  const proporcao = resumo.limite > 0 ? Math.min(1, resumo.faltasRegistradas / resumo.limite) : 1;
-  const porcentagem = Math.round(proporcao * 100);
+  const proporcao = resumo.limite > 0 ? resumo.faltasRegistradas / resumo.limite : 1;
+  const restantes = Math.max(0, resumo.faltasRestantes);
 
   return (
     <View style={estilos.cartao}>
@@ -28,7 +29,7 @@ export default function CartaoDisciplina({ disciplina, resumo, onAbrir, onRegist
         onPress={onAbrir}
         accessibilityRole="button"
         accessibilityLabel={`Abrir ${disciplina.nome}`}
-        style={estilos.area}
+        style={({ pressed }) => [estilos.area, pressed && estilos.pressionado]}
       >
         <View style={estilos.topo}>
           <View style={[estilos.icone, { backgroundColor: paleta.fundo }]}>
@@ -38,12 +39,23 @@ export default function CartaoDisciplina({ disciplina, resumo, onAbrir, onRegist
             <Text style={estilos.nome} numberOfLines={2}>
               {disciplina.nome}
             </Text>
-            {disciplina.professor ? <Text style={estilos.professor}>{disciplina.professor}</Text> : null}
+            {disciplina.professor ? (
+              <Text style={estilos.professor} numberOfLines={1}>
+                {disciplina.professor}
+              </Text>
+            ) : null}
           </View>
-          <Ionicons name="chevron-forward" size={20} color={cores.textoSuave} />
+          <View style={estilos.restantes} accessible accessibilityLabel={`${restantes} faltas restantes`}>
+            <Text style={[estilos.numero, { color: paleta.texto }]} maxFontSizeMultiplier={1.3}>
+              {restantes}
+            </Text>
+            <Text style={estilos.legenda}>{restantes === 1 ? 'restante' : 'restantes'}</Text>
+          </View>
         </View>
 
-        <View style={estilos.linhaContagem}>
+        <BarraProgresso proporcao={proporcao} cor={paleta.forte} />
+
+        <View style={estilos.linhaInfo}>
           <Text style={estilos.contagem}>
             {resumo.faltasRegistradas} / {resumo.limite} faltas
           </Text>
@@ -51,40 +63,52 @@ export default function CartaoDisciplina({ disciplina, resumo, onAbrir, onRegist
             Frequência {formatarPercentual(frequenciaDe(disciplina.cargaHoraria, resumo.faltasRegistradas))}
           </Text>
         </View>
+      </Pressable>
 
-        <View style={estilos.trilho}>
-          <View style={[estilos.preenchimento, { width: `${porcentagem}%`, backgroundColor: paleta.forte }]} />
-        </View>
-
+      <View style={estilos.rodape}>
         <View style={[estilos.etiqueta, { backgroundColor: paleta.fundo }]}>
           <Text style={[estilos.textoEtiqueta, { color: paleta.texto }]}>{rotuloStatus(resumo.status)}</Text>
         </View>
-      </Pressable>
-
-      <Botao
-        titulo="Registrar falta"
-        variante="secundaria"
-        icone="add"
-        onPress={onRegistrarFalta}
-        textoAcessivel={`Registrar falta em ${disciplina.nome}`}
-      />
+        <Pressable
+          onPress={onRegistrarFalta}
+          accessibilityRole="button"
+          accessibilityLabel={`Registrar falta em ${disciplina.nome}`}
+          style={({ pressed }) => [estilos.acao, pressed && estilos.pressionado]}
+        >
+          <Ionicons name="add" size={20} color={cores.primaria} />
+          <Text style={estilos.textoAcao}>Falta</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
   cartao: { backgroundColor: cores.cartao, borderRadius: raio.lg, padding: 16, marginBottom: 12, gap: 12, ...sombra },
-  area: { gap: 10 },
+  area: { gap: 12 },
+  pressionado: { opacity: 0.7 },
   topo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   icone: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   titulos: { flex: 1 },
   nome: { fontSize: 18, fontWeight: '700', color: cores.texto },
-  professor: { fontSize: 16, color: cores.textoSuave },
-  linhaContagem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  contagem: { fontSize: 16, color: cores.texto },
-  frequencia: { fontSize: 16, color: cores.textoSuave },
-  trilho: { height: 10, borderRadius: 5, backgroundColor: cores.borda, overflow: 'hidden' },
-  preenchimento: { height: 10, borderRadius: 5 },
-  etiqueta: { alignSelf: 'flex-start', borderRadius: raio.pilula, paddingHorizontal: 12, paddingVertical: 4 },
-  textoEtiqueta: { fontSize: 16, fontWeight: '600' },
+  professor: { fontSize: 14, color: cores.textoSuave, marginTop: 2 },
+  restantes: { alignItems: 'center', minWidth: 52 },
+  numero: { fontSize: 30, fontWeight: '800', lineHeight: 34 },
+  legenda: { fontSize: 13, color: cores.textoSuave },
+  linhaInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  contagem: { fontSize: 15, fontWeight: '600', color: cores.texto },
+  frequencia: { fontSize: 14, color: cores.textoSuave },
+  rodape: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  etiqueta: { borderRadius: raio.pilula, paddingHorizontal: 12, paddingVertical: 6 },
+  textoEtiqueta: { fontSize: 14, fontWeight: '700' },
+  acao: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 16,
+    borderRadius: raio.pilula,
+    backgroundColor: cores.primariaSuave,
+  },
+  textoAcao: { fontSize: 16, fontWeight: '700', color: cores.primaria },
 });
